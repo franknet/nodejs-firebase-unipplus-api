@@ -1,7 +1,7 @@
 const { Router } = require("express");
-const { fetch } = require("../src/controllers/academic-records-controller");
+const controller = require("../src/controllers/academic-records-controller");
 const router = Router();
 
-router.get("/v1/academic_records", fetch);
+router.get("/v1/academic_records", controller.fetch);
 
 module.exports = router

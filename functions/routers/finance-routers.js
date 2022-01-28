@@ -1,8 +1,8 @@
 const { Router } = require("express");
-const { fetchPayments, fetchBankSlip } = require("../src/controllers/finance-controller");
+const controller = require("../src/controllers/finance-controller");
 const router = Router();
 
-router.get("/v1/finance/payments", fetchPayments);
-router.get("/v1/finance/bank_slip", fetchBankSlip);
+router.get("/v1/finance/payments", controller.fetchPayments);
+router.get("/v1/finance/bank_slip", controller.fetchBankSlip);
 
 module.exports = router

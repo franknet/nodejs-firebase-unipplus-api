@@ -1,8 +1,8 @@
 
 const { Router } = require("express");
-const { fetchAuthentication } = require("../src/controllers/authentication-controller");
+const controller = require("../src/controllers/authentication-controller");
 const router = Router();
 
-router.post("/v1/authentication", fetchAuthentication);
+router.post("/v1/authentication", controller.fetchAuthentication);
 
 module.exports = router
