@@ -1,6 +1,14 @@
 const _ = require("lodash");
 const NumberUtils = require("../utils/number-parser"); 
 
+const PAYMENT_TYPE = {
+    MS:	"Mensalidade",	
+    PC:	"Parcelamento de mensalidades",
+    DF:	"Diferença de mensalidade",	
+    TX:	"Taxa de serviços",
+    CD:	"Confissão de dívida"
+}
+
 function createPayments(extract, bills) { 
     function mergeRight(bill, payment) {
         if (bill["seq"] === payment["seq"]) {
@@ -20,7 +28,7 @@ function createPayments(extract, bills) {
         total += paidPerType;
         return {
             type: key,
-            name: types[key],
+            name: PAYMENT_TYPE[key],
             totalPaid: _.round(paidPerType, 2),
             payments: value
         }
@@ -53,16 +61,7 @@ function setTotalPaid(payments) {
     return total;
 }
 
-const types = {
-    MS:	"Mensalidade",	
-    PC:	"Parcelamento de mensalidades",
-    DF:	"Diferença de mensalidade",	
-    TX:	"Taxa de serviços",
-    CD:	"Confissão de dívida"
-}
-
 function setBankSlipUrl(html) {  
-    console.log(html);
     let regex = new RegExp("(?<=AbrirPagamentoBoleto\\(')(.*)(?='\\))", "g");
     let bankSlipId = html.match(regex)[0]; 
     return "/v1/finance/bank_slip?id=" + bankSlipId;

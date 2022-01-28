@@ -15,7 +15,7 @@ async function fetchPayments(request, response) {
         let { statusCode, headers, data } = await fetchExtract(cookie);
         response.status(statusCode).header(headers).send(data);
     } catch (err) {
-        response.status(404).header({ "Content-Type": "application/json" }).send({ "message": err["stack"] });
+        response.status(404).header({ "Content-Type": "application/json" }).send({ "message": err["message"] });
     }
 }
 
@@ -23,7 +23,7 @@ async function fetchExtract(cookie) {
     let { status, statusText, data } = await Service.fetchPayments(cookie);
 
     if (status !== 200) {
-        return new ApiResult({ statusCode: status, message: statusText});
+        return new ApiResult({ statusCode: status, message: statusText });
     } 
 
     return await fetchBills(cookie, data);

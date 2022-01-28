@@ -9,7 +9,7 @@ const { request, response } = require("express");
  * @param {response} response - The express response
  */
 
-async function fetch(request, response) {
+async function fetchDisciplines(request, response) {
     try {
         let cookie = request.headers["cookie"];
         let { statusCode, headers, data } = await fetchGrades(cookie); 
@@ -46,4 +46,4 @@ function createDisciplines(gradesHtml, examsHtml) {
     return new ApiResult({ statusCode: 200, data: disciplines });
 }
 
-module.exports = { fetch }
+module.exports = { fetchDisciplines }

@@ -8,7 +8,7 @@ const { request, response } = require("express");
  * @param {response} response - The express response
  */
 
-async function fetch(request, response) {
+async function fetchAuthentication(request, response) {
     try {
         let credentials = request.body;
         let { statusCode, headers, data } = await fetchLogin(credentials);  
@@ -95,4 +95,4 @@ async function fetchNewHome(session, url, cookie) {
     return new ApiResult({ statusCode: 200, data: data, headers: apiHeaders });
 }
 
-module.exports = { fetch }
+module.exports = { fetchAuthentication }
