@@ -1,3 +1,4 @@
+
 function stringToFloat(value) {
     value = value.replace(".", "").replace(",", ".");
     if (value === "AP") {

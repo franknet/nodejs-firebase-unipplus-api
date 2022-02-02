@@ -5,4 +5,4 @@ const router = Router();
 
 router.post("/v1/authentication", controller.fetchAuthentication);
 
-module.exports = router
+module.exports = router;

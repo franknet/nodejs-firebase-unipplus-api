@@ -1,5 +1,5 @@
 const Service = require("../service"); 
-const ApiResult = require("../models/api-result"); 
+const RestError = require("../models/rest-error");
 const Factory = require("../factories/disciplines-factory"); 
 const HTMLParser = require("../utils/html-parser");
 const { request, response } = require("express");
@@ -11,39 +11,51 @@ const { request, response } = require("express");
 
 async function fetchDisciplines(request, response) {
     try {
-        let cookie = request.headers["cookie"];
-        let { statusCode, headers, data } = await fetchGrades(cookie); 
-        response.status(statusCode).header(headers).send(data);
+        let cookie          = request.headers["cookie"];
+        let gradesHTML      = await fetchGrades(cookie); 
+        let examsHTML       = await fetchExams(cookie);
+        let disciplines     = createDisciplines(gradesHTML, examsHTML);
+
+        let headers = {
+            "Content-Type": "application/json",
+            "Set-Cookie": cookie
+        }
+
+        response.status(200).header(headers).send(disciplines);
     } catch (err) {
-        response.status(404).header({ "Content-Type": "application/json" }).send({ "message": err["stack"] });
+        let restError = new RestError({ error });
+        response.status(restError.statusCode).header(restError.headers).send(restError.data);
     }
 }
 
 async function fetchGrades(cookie) {
     let { status, statusText, data } = await Service.fetchNF(cookie);
 
-    if (status !== 200) {
-        return new ApiResult({ statusCode: status, message: statusText});
-    } 
-
-    return fetchExams(cookie, data);
+    if (status === 200) {
+        return data
+    } else if (status === 302) {
+        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+    } else {
+        throw new RestError({ statusCode: statusCode, message: statusText }); 
+    }
 }
 
-async function fetchExams(cookie, gradesHtml) {
+async function fetchExams(cookie) {
     let { status, statusText, data } = await Service.fetchME(cookie);
 
-    if (status !== 200) {
-        return new ApiResult({ statusCode: status, message: statusText});
-    } 
-
-    return createDisciplines(gradesHtml, data) 
+    if (status === 200) {
+        return data
+    } else if (status === 302) {
+        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+    } else {
+        throw new RestError({ statusCode: statusCode, message: statusText }); 
+    }
 }
 
 function createDisciplines(gradesHtml, examsHtml) { 
     let nfs = HTMLParser.tableToJsonArray(gradesHtml, ["cod", "discipline", "special", "type", "obs", "np1", "np2", "mf", "obsences"]);  
     let mes = HTMLParser.tableToJsonArray(examsHtml, ["cod", "discipline", "special", "type", "obs", "obsences", "ms", "ex", "mf"]); 
-    let disciplines = Factory.createDisciplines(nfs, mes);
-    return new ApiResult({ statusCode: 200, data: disciplines });
+    return Factory.createDisciplines(nfs, mes);
 }
 
 module.exports = { fetchDisciplines }

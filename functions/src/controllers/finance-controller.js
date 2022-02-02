@@ -1,4 +1,5 @@
-const ApiResult = require("../models/api-result");
+
+const RestError = require("../models/rest-error");
 const Service = require("../service");
 const Factory = require("../factories/finance-factory");
 const HTMLParser = require("../utils/html-parser"); 
@@ -11,32 +12,45 @@ const { request, response } = require("express");
 
 async function fetchPayments(request, response) {
     try {
-        let cookie = request.headers["cookie"];
-        let { statusCode, headers, data } = await fetchExtract(cookie);
-        response.status(statusCode).header(headers).send(data);
-    } catch (err) {
-        response.status(404).header({ "Content-Type": "application/json" }).send({ "message": err["message"] });
+        let cookie          = request.headers["cookie"];
+        let extractsHTML    = await fetchExtract(cookie);
+        let billsHTML       = await fetchBills(cookie);
+        let payments        = createPaymentsModel(extractsHTML, billsHTML);
+
+        let headers = {
+            "Content-Type": "application/json",
+            "Set-Cookie": cookie
+        }
+
+        response.status(statusCode).header(headers).send(payments);
+    } catch (error) {
+        let restError = new RestError({ error });
+        response.status(restError.statusCode).header(restError.headers).send(restError.data);
     }
 }
 
 async function fetchExtract(cookie) {
     let { status, statusText, data } = await Service.fetchPayments(cookie);
 
-    if (status !== 200) {
-        return new ApiResult({ statusCode: status, message: statusText });
+    if (status === 200) {
+        return data
+    } else if (status === 302) {
+        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+    } else {
+        throw new RestError({ statusCode: statusCode, message: statusText }); 
     } 
-
-    return await fetchBills(cookie, data);
 }
 
-async function fetchBills(cookie, extracts) {
+async function fetchBills(cookie) {
     let { status, statusText, data } = await Service.fetchBankSlips(cookie);
 
-    if (status !== 200) {
-        return new ApiResult({ statusCode: status, message: statusText});
-    } 
-
-    return createPaymentsModel(extracts, data);
+    if (status === 200) {
+        return data
+    } else if (status === 302) {
+        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+    } else {
+        throw new RestError({ statusCode: statusCode, message: statusText }); 
+    }
 }
 
 function createPaymentsModel(extractsHtml, billsHtml) {
@@ -44,57 +58,63 @@ function createPaymentsModel(extractsHtml, billsHtml) {
     let billsFields = ["seq", "install", "docType", "paymentPlan", "dueDate", "docValue", "paymentDate", "valuePaid", "reversalDate", "reversalValue","status", "bankSlipUrl"];
     let extract = HTMLParser.tableToJsonArray(extractsHtml, extractFields);
     let bills = HTMLParser.tableToJsonArray(billsHtml, billsFields);
-    let payments = Factory.createPayments(extract, bills);
-    return new ApiResult({ statusCode: 200, data: payments });
+    return Factory.createPayments(extract, bills); 
 }
 
 async function fetchBankSlip(request, response) {
     try {
-        let cookie = request.headers["cookie"];
-        let billId = request.query["id"];
-        let { statusCode, headers, data } = await fetchBankSlipGeneration(cookie, billId);
-        response.status(statusCode).header(headers).send(data);
-    } catch (err) {
-        response.status(404).header({ "Content-Type": "application/json" }).send({ "message": err["stack"] });
+        let cookie          = request.headers["cookie"];
+        let billId          = request.query["id"];
+        let bankSlipURL     = await fetchBankSlipURL(cookie, billId);
+        let bankSlipParams  = await fetchBankSlipParams(cookie, bankSlipURL);
+        let bankSlipPDF     = await downloadBankSlipPDF(cookie, bankSlipURL, bankSlipParams);
+
+        let headers = {
+            "Content-Type": "application/pdf",
+            "Set-Cookie": cookie
+        }
+
+        response.status(200).header(headers).send(bankSlipPDF);
+    } catch (error) {
+        let restError = new RestError({ error });
+        response.status(restError.statusCode).header(restError.headers).send(restError.data);
     }
 }
 
-async function fetchBankSlipGeneration(cookie, billId) {
+async function fetchBankSlipURL(cookie, billId) {
     let { status, headers } = await Service.fetchBankSlip(cookie, billId);
 
     if (status !== 302) {
-        return new ApiResult({ statusCode: status, message: "Não foi possível baixar o boleto!"});
+        throw new RestError({ statusCode: statusCode, message: "Não foi possível baixar o boleto!" });  
     } 
 
-    let location = headers["location"];
-
-    return await validateBankSlip(cookie, location);
+    return headers["location"];
 }
 
-async function validateBankSlip(cookie, path) { 
+async function fetchBankSlipParams(cookie, path) { 
     let { status, data } = await Service.fetch(path, "get", { "Cookie": cookie }, null, null);
 
     if (status !== 200) {
-        return new ApiResult({ statusCode: status, message: "Não foi possível baixar o boleto!"});
+        throw new RestError({ statusCode: statusCode, message: "Não foi possível baixar o boleto!" }); 
     } 
 
-    let payload = new URLSearchParams();
-    payload.append("__VIEWSTATE", HTMLParser.getElementValueById(data, "__VIEWSTATE"));
-    payload.append("__VIEWSTATEGENERATOR", HTMLParser.getElementValueById(data, "__VIEWSTATEGENERATOR"));
-    payload.append("Button1", "Ir para impressão");
+    let params = new URLSearchParams();
+    params.append("__VIEWSTATE", HTMLParser.getElementValueById(data, "__VIEWSTATE"));
+    params.append("__VIEWSTATEGENERATOR", HTMLParser.getElementValueById(data, "__VIEWSTATEGENERATOR"));
+    params.append("Button1", "Ir para impressão");
 
-    return await downloadBankSlip(cookie, path, payload);
+    return params;
 }
 
 
-async function downloadBankSlip(cookie, path, payload) {  
-    let { status, data, headers } = await Service.fetch(path, "post", { "Cookie": cookie }, null, payload, "arraybuffer");
+async function downloadBankSlipPDF(cookie, path, payload) {  
+    let { status, data } = await Service.fetch(path, "post", { "Cookie": cookie }, null, payload, "arraybuffer");
 
     if (status !== 200) {
-        return new ApiResult({ statusCode: status, message: "Não foi possível baixar o boleto!"});
+        throw new RestError({ statusCode: statusCode, message: "Não foi possível baixar o boleto!" }); 
     } 
 
-    return new ApiResult({ statusCode: 200, headers: headers, data: data });
+    return data;
 }
 
 module.exports = { fetchPayments, fetchBankSlip }

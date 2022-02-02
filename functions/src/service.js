@@ -1,6 +1,6 @@
 const HttpClient = require("axios").default;  
 
-const IS_REQUEST_LOGGING_ENABLED = true;
+const IS_REQUEST_LOGGING_ENABLED = false;
 
 const ORIGINS = {
     SYSTEMS: "https://sistemasunip.unip.br",

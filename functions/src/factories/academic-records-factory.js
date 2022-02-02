@@ -21,8 +21,10 @@ function setAvg(disciplines) {
     let index = 0;
     _.forEach(disciplines, (discipline) => {
         let { avg, status } = discipline;
+        
         if (_.includes(["CURSANDO NORMAL", "NÃO CURSADA", "A CURSAR"], status) ) {
-            return
+            discipline["avg"] = NumberUtils.stringToFloat(avg);
+            return;
         }
         if (avg === "--" && status === "APROVADO" ) {
             avg = "10"
