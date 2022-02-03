@@ -21,21 +21,21 @@ function createPayments(extract, bills) {
         }
     }
     let payments = _.uniqBy(_.unionWith(extract, bills, mergeRight), "seq");
-    let group = _.groupBy(payments, "docType");
+    let type = _.groupBy(payments, "docType");
     let total = 0;
-    let groups = _.map(group, (value, key) => {
+    let types = _.map(type, (value, key) => {
         const paidPerType = setTotalPaid(value, bills);
         total += paidPerType;
         return {
-            type: key,
-            name: PAYMENT_TYPE[key],
-            totalPaid: _.round(paidPerType, 2),
-            payments: value
+            "type": key,
+            "name": PAYMENT_TYPE[key],
+            "totalPaid": _.round(paidPerType, 2),
+            "payments": value
         }
     });
     return {
-        totalPaid: _.round(total, 2),
-        docs: groups
+        "totalPaid": _.round(total, 2),
+        "types": types
     };
 }
 

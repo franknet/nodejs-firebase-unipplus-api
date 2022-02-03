@@ -5,13 +5,13 @@ class RestError extends Error {
         super();
         if (error !== undefined) {
             this.message = error["message"];
-            console.error(error["stack"]);
-
             if (error["statusCode"] === undefined) {
                 this.statusCode = 404;
             } else {
                 this.statusCode = error["statusCode"];
             } 
+
+            console.error(error["stack"]);
         } else {
             this.statusCode = statusCode;
             this.message = message;

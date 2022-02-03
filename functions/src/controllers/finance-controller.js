@@ -1,9 +1,9 @@
 
-const RestError = require("../models/rest-error");
-const Service = require("../service");
-const Factory = require("../factories/finance-factory");
-const HTMLParser = require("../utils/html-parser"); 
-const { request, response } = require("express");
+const RestError                 = require("../models/rest-error");
+const Service                   = require("../service");
+const Factory                   = require("../factories/finance-factory");
+const HTMLParser                = require("../utils/html-parser"); 
+const { request, response }     = require("express");
 
 /**
  * @param {request} request - The express request
@@ -18,11 +18,10 @@ async function fetchPayments(request, response) {
         let payments        = createPaymentsModel(extractsHTML, billsHTML);
 
         let headers = {
-            "Content-Type": "application/json",
-            "Set-Cookie": cookie
+            "Content-Type": "application/json"
         }
 
-        response.status(statusCode).header(headers).send(payments);
+        response.status(200).header(headers).send(payments);
     } catch (error) {
         let restError = new RestError({ error });
         response.status(restError.statusCode).header(restError.headers).send(restError.data);

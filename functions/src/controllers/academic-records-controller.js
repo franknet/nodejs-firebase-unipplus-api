@@ -1,8 +1,8 @@
 
-const RestError                         = require("../models/rest-error");
-const Service                           = require("../service");
-const Factory                           = require("../factories/academic-records-factory"); 
-const HTMLParser                        = require("../utils/html-parser");
+const RestError                 = require("../models/rest-error");
+const Service                   = require("../service");
+const Factory                   = require("../factories/academic-records-factory"); 
+const HTMLParser                = require("../utils/html-parser");
 const { request, response }     = require("express"); 
 
 /**
@@ -17,11 +17,10 @@ async function fetch(request, response) {
         let disciplines         = createDisciplines(academicRecodsHTML);
 
         let headers = {
-            "Content-Type": "application/json",
-            "Set-Cookie": cookie
+            "Content-Type": "application/json"
         }
 
-        response.status(statusCode).header(headers).send(disciplines);
+        response.status(200).header(headers).send(disciplines);
     } catch (error) {
         let restError = new RestError({ error });
         response.status(restError.statusCode).header(restError.headers).send(restError.data);

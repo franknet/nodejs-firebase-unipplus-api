@@ -1,8 +1,8 @@
-const Service = require("../service"); 
-const RestError = require("../models/rest-error");
-const Factory = require("../factories/disciplines-factory"); 
-const HTMLParser = require("../utils/html-parser");
-const { request, response } = require("express");
+const Service                   = require("../service"); 
+const RestError                 = require("../models/rest-error");
+const Factory                   = require("../factories/disciplines-factory"); 
+const HTMLParser                = require("../utils/html-parser");
+const { request, response }     = require("express");
 
 /**
  * @param {request} request - The express request
@@ -17,8 +17,7 @@ async function fetchDisciplines(request, response) {
         let disciplines     = createDisciplines(gradesHTML, examsHTML);
 
         let headers = {
-            "Content-Type": "application/json",
-            "Set-Cookie": cookie
+            "Content-Type": "application/json"
         }
 
         response.status(200).header(headers).send(disciplines);

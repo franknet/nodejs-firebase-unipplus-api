@@ -1,8 +1,8 @@
-const RestError = require("../models/rest-error"); 
-const _ = require("lodash");
-const Service = require("../service");
-const { request, response } = require("express");
-const userController = require("./user-controller"); 
+const RestError                 = require("../models/rest-error"); 
+const _                         = require("lodash");
+const Service                   = require("../service");
+const { request, response }     = require("express");
+const userController            = require("./user-controller"); 
 
 /**
  * @param {request} request - The express request
@@ -12,10 +12,10 @@ const userController = require("./user-controller");
 async function fetchAuthentication(request, response) {
     try {
         let credentials     = request.body;
-        let session         = await fetchLogin(credentials);  
-        let systems         = await fetchSystems(session);
+        let secUser         = await fetchLogin(credentials);  
+        let systems         = await fetchSystemsForUser(secUser);
         let cookie          = await fetchSec(systems);
-        let user            = await userController.createUser(session["nomeUsuario"], session["email"], credentials["password"]);
+        let fbUser          = await userController.createUser(secUser, credentials["password"]);
 
         let headers = {
             "Content-Type": "application/json",
@@ -23,16 +23,17 @@ async function fetchAuthentication(request, response) {
         }
     
         let data = {
-            "session": {
-                "user": {
-                    "uid": user.uid,
-                    "id": session["identificacao"],
-                    "userName": session["nomeUsuario"], 
-                    "status": session["situacao"],
-                    "gender": session["sexo"],
-                    "campus": session["unidade"]
-                }
+            "user": { 
+                "id": secUser["identificacao"],
+                "userName": secUser["nomeUsuario"], 
+                "status": secUser["situacao"],
+                "gender": secUser["sexo"],
+                "campus": secUser["unidade"]
             }
+        }
+
+        if (fbUser !== null) {
+            data["user"]["uid"] = fbUser.uid;
         }
 
         response.status(200).header(headers).send(data);
@@ -55,14 +56,14 @@ async function fetchLogin(credentials) {
     } 
     
     if (!data["valida"]) {
-        throw new RestError({ statusCode: 301, message: data["mensagemInvalida"] });  
+        throw new RestError({ statusCode: 401, message: data["mensagemInvalida"] });  
     } 
 
     return data; 
 }
 
-async function fetchSystems(session) { 
-    let authorization = "Basic " + Buffer.from("br.unip.central-aluno:" + session["token"]).toString("base64")
+async function fetchSystemsForUser(user) { 
+    let authorization = "Basic " + Buffer.from("br.unip.central-aluno:" + user["token"]).toString("base64")
     let { status, statusText, data } = await Service.fetchUserSystems(authorization);
 
     if (status != 200) {
