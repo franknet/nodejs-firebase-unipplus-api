@@ -23,17 +23,15 @@ async function fetchAuthentication(request, response) {
         }
     
         let data = {
-            "user": { 
-                "id": secUser["identificacao"],
-                "userName": secUser["nomeUsuario"], 
-                "status": secUser["situacao"],
-                "gender": secUser["sexo"],
-                "campus": secUser["unidade"]
-            }
+            "id": secUser["identificacao"],
+            "userName": secUser["nomeUsuario"], 
+            "status": secUser["situacao"],
+            "gender": secUser["sexo"],
+            "campus": secUser["unidade"],
         }
 
         if (fbUser !== null) {
-            data["user"]["uid"] = fbUser.uid;
+            data["uid"] = fbUser.uid;
         }
 
         response.status(200).header(headers).send(data);
@@ -52,7 +50,7 @@ async function fetchLogin(credentials) {
     let { status, statusText, data } = await Service.fetchLogin(form);
 
     if (status != 200) {
-        throw new RestError({ statusCode: statusCode, message: statusText }); 
+        throw new RestError({ statusCode: status, message: statusText }); 
     } 
     
     if (!data["valida"]) {

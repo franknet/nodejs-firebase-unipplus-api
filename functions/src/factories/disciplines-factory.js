@@ -1,6 +1,11 @@
 const _ = require("lodash");
 const NumberUtils = require("../utils/number-parser");
 
+const _groupNames = {
+    "GR": "Grade Regular",
+    "DP": "Dependências"
+}
+
 function createDisciplines(nfs, mes) {
     let count = 0;
     let totalAvg = 0;
@@ -17,8 +22,9 @@ function createDisciplines(nfs, mes) {
     const group = _.groupBy(disciplines, "type");
     const groups = _.map(group, (value, key) => {
         const obj = {
-            type: key,
-            disciplines: value
+            "type": key,
+            "title": _groupNames[key],
+            "disciplines": value
         };
         return obj;
     });

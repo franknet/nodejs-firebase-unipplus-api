@@ -12,16 +12,17 @@ const { request, response }     = require("express");
 async function fetchDisciplines(request, response) {
     try {
         let cookie          = request.headers["cookie"];
+        if (cookie == undefined) {
+            throw new RestError({ statusCode: 302, message: "Sessão expirada" });
+        }
         let gradesHTML      = await fetchGrades(cookie); 
         let examsHTML       = await fetchExams(cookie);
         let disciplines     = createDisciplines(gradesHTML, examsHTML);
-
         let headers = {
             "Content-Type": "application/json"
         }
-
         response.status(200).header(headers).send(disciplines);
-    } catch (err) {
+    } catch (error) {
         let restError = new RestError({ error });
         response.status(restError.statusCode).header(restError.headers).send(restError.data);
     }

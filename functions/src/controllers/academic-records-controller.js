@@ -13,6 +13,9 @@ const { request, response }     = require("express");
 async function fetch(request, response) {
     try {
         let cookie              = request.headers["cookie"];
+        if (cookie == undefined) {
+            throw new RestError({ statusCode: 302, message: "Sessão expirada" });
+        }
         let academicRecodsHTML  = await fetchAcademicRecords(cookie);
         let disciplines         = createDisciplines(academicRecodsHTML);
 

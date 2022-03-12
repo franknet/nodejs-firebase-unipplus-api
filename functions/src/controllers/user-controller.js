@@ -49,12 +49,13 @@ async function getUserByEmail(email) {
 async function fetchPhoto(request, response) {
     try {  
         let cookie      = request.headers["cookie"];
+        if (cookie == undefined) {
+            throw new RestError({ statusCode: 302, message: "Sessão expirada" });
+        }
         let photoPNG    = await downloadPhoto(cookie);
-
         let headers = {
             "Content-Type": "image/png"
         }
-
         response.status(200).header(headers).end(photoPNG);
     } catch (error) { 
         let restError = new RestError({ error });

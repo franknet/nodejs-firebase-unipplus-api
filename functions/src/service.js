@@ -21,13 +21,14 @@ const PATHS = {
 
 const DEFAULT_CONFIG = {
     baseURL: ORIGINS.SEC_2,
+    headers: {},
     maxRedirects: 0,
     validateStatus: false,
     setBaseURL: function(baseURL) {
         this.baseURL = baseURL;
     },
     setCookie: function(cookie) {
-        this.headers["Cookie"] = cookie;
+        this.headers["Cookie"] = cookie; 
     }
 }
 

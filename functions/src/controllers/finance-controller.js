@@ -13,6 +13,9 @@ const { request, response }     = require("express");
 async function fetchPayments(request, response) {
     try {
         let cookie          = request.headers["cookie"];
+        if (cookie == undefined) {
+            throw new RestError({ statusCode: 302, message: "Sessão expirada" });
+        }
         let extractsHTML    = await fetchExtract(cookie);
         let billsHTML       = await fetchBills(cookie);
         let payments        = createPaymentsModel(extractsHTML, billsHTML);
@@ -63,6 +66,9 @@ function createPaymentsModel(extractsHtml, billsHtml) {
 async function fetchBankSlip(request, response) {
     try {
         let cookie          = request.headers["cookie"];
+        if (cookie == undefined) {
+            throw new RestError({ statusCode: 302, message: "Sessão expirada" });
+        }
         let billId          = request.query["id"];
         let bankSlipURL     = await fetchBankSlipURL(cookie, billId);
         let bankSlipParams  = await fetchBankSlipParams(cookie, bankSlipURL);
