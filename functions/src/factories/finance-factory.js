@@ -10,8 +10,14 @@ const PAYMENT_TYPE = {
 }
 
 function createPayments(extract, bills) { 
-    function mergeRight(bill, payment) {
-        if (bill["seq"] === payment["seq"]) {
+    var totalPaid = 0;
+    var payments = [];
+
+    // join extract and bills list, and add new fields
+    _.forEach(_.reverse(extract), (payment, index) => {
+        let paymentSeq = payment["seq"];
+        let bill = _.find(bills, { "seq": paymentSeq });
+        if (bill !== undefined) {
             payment["bankSlipUrl"] = setBankSlipUrl(bill["bankSlipUrl"]);
             payment["reversalDate"] = bill["reversalDate"];
             payment["reversalValue"] = bill["reversalValue"];
@@ -19,31 +25,7 @@ function createPayments(extract, bills) {
             payment["reversalDate"] = "";
             payment["reversalValue"] = "";
         }
-    }
-    let payments = _.uniqBy(_.unionWith(extract, bills, mergeRight), "seq");
-    let type = _.groupBy(payments, "docType");
-    let total = 0;
-    let types = _.map(type, (value, key) => {
-        const paidPerType = setTotalPaid(value, bills);
-        total += paidPerType;
-        return {
-            "type": key,
-            "name": PAYMENT_TYPE[key],
-            "totalPaid": _.round(paidPerType, 2),
-            "payments": value
-        }
-    });
-    return {
-        "totalPaid": _.round(total, 2),
-        "types": types
-    };
-}
 
-function setTotalPaid(payments) {
-    
-    let total = 0;
-    _.forEach(payments, (payment, index) => {
-        
         let docValue = _.replace(payment["docValue"], "R$", "");
         let valuePaid = _.replace(payment["valuePaid"], "R$", "");
         let reversalValue = _.replace(payment["reversalValue"], "R$", "");
@@ -51,14 +33,54 @@ function setTotalPaid(payments) {
         let docValueFlt = NumberUtils.stringToFloat(docValue);
         let valuePaidFlt = NumberUtils.stringToFloat(valuePaid);
         let reversalValueFlt = NumberUtils.stringToFloat(reversalValue);
-        
+
+        totalPaid += valuePaidFlt;
+        payment["status"] = payment["status"] === "OK" ? `Pago no dia ${payment["paymentDate"]}` : `Vence no dia ${payment["dueDate"]}`;
+        payment["seq"] = paymentSeq.split("/").reverse().join("/");
         payment["docValue"] = docValueFlt;
         payment["valuePaid"] = valuePaidFlt;
         payment["reversalValue"] = reversalValueFlt;
-        payment["difference"] = setDifference(payments, index);
-        total += valuePaidFlt;
+
+        payments.push(payment);
     });
-    return total;
+
+    let groups = _.map(_.groupBy(payments, "docType"), (groupPayments, groupType) => {
+        let totalGroupValue = 0;
+
+        // Calulate doc value difference, and total paid by group
+        _.forEach(groupPayments, (payment, index) => {
+            let nextPayment = extract[index + 1];
+            totalGroupValue += payment["valuePaid"];
+            let difference = setDifference(payment, nextPayment);
+            payment["name"] = PAYMENT_TYPE[groupType], 
+            payment["difference"] = {
+                "code": getDifferenceStatusCode(difference),
+                "value": difference,
+            }; 
+        });
+
+        return {
+            "totalPaid": totalGroupValue,
+            "type": groupType,
+            "name": PAYMENT_TYPE[groupType], 
+            "payments": groupPayments
+        }
+    });
+
+    return {
+        "totalPaid": _.round(totalPaid, 2),
+        "groups": groups
+    };
+}
+
+function getDifferenceStatusCode(difference) {
+    if (difference > 0) {
+        return -1;
+    } 
+    if (difference < 0) {
+        return 1;
+    } 
+    return 0;
 }
 
 function setBankSlipUrl(html) {  
@@ -67,11 +89,11 @@ function setBankSlipUrl(html) {
     return "/v1/finance/bank_slip?id=" + bankSlipId;
 }
 
-function setDifference(payments, index) {
-    if (index === 0 ) { return 0 }
-    let payment = payments[index];
-    let previousPayment = payments[index-1];
-    return _.round(payment.docValue - previousPayment.docValue, 2);
+function setDifference(payment, nextPayment) { 
+    if (nextPayment === undefined) { return 0; }
+    let currentDocValue = payment["docValue"];
+    let nextDocValue = nextPayment["docValue"];
+    return _.round(currentDocValue - nextDocValue, 2);
 }
 
 module.exports = { createPayments }

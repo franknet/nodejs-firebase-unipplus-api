@@ -37,9 +37,9 @@ async function fetchExtract(cookie) {
     if (status === 200) {
         return data
     } else if (status === 302) {
-        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+        throw new RestError({ statusCode: status, message: "Sessão expirada!" }); 
     } else {
-        throw new RestError({ statusCode: statusCode, message: statusText }); 
+        throw new RestError({ statusCode: status, message: statusText }); 
     } 
 }
 
@@ -49,9 +49,9 @@ async function fetchBills(cookie) {
     if (status === 200) {
         return data
     } else if (status === 302) {
-        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+        throw new RestError({ statusCode: status, message: "Sessão expirada!" }); 
     } else {
-        throw new RestError({ statusCode: statusCode, message: statusText }); 
+        throw new RestError({ statusCode: status, message: statusText }); 
     }
 }
 
@@ -90,7 +90,7 @@ async function fetchBankSlipURL(cookie, billId) {
     let { status, headers } = await Service.fetchBankSlip(cookie, billId);
 
     if (status !== 302) {
-        throw new RestError({ statusCode: statusCode, message: "Não foi possível baixar o boleto!" });  
+        throw new RestError({ statusCode: status, message: "Não foi possível baixar o boleto!" });  
     } 
 
     return headers["location"];
@@ -100,7 +100,7 @@ async function fetchBankSlipParams(cookie, path) {
     let { status, data } = await Service.fetch(path, "get", { "Cookie": cookie }, null, null);
 
     if (status !== 200) {
-        throw new RestError({ statusCode: statusCode, message: "Não foi possível baixar o boleto!" }); 
+        throw new RestError({ statusCode: status, message: "Não foi possível baixar o boleto!" }); 
     } 
 
     let params = new URLSearchParams();
@@ -116,7 +116,7 @@ async function downloadBankSlipPDF(cookie, path, payload) {
     let { status, data } = await Service.fetch(path, "post", { "Cookie": cookie }, null, payload, "arraybuffer");
 
     if (status !== 200) {
-        throw new RestError({ statusCode: statusCode, message: "Não foi possível baixar o boleto!" }); 
+        throw new RestError({ statusCode: status, message: "Não foi possível baixar o boleto!" }); 
     } 
 
     return data;
