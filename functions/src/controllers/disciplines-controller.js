@@ -12,8 +12,12 @@ const { request, response }     = require("express");
 async function fetchDisciplines(request, response) {
     try {
         let cookie          = request.headers["cookie"];
-        if (cookie == undefined) {
+        let campus          = request.headers["Campus"];
+        if (cookie === undefined) {
             throw new RestError({ statusCode: 302, message: "Sessão expirada" });
+        }
+        if (campus === undefined) {
+            throw new RestError({ statusCode: 404, message: "Unidade não especificada" });
         }
         let gradesHTML      = await fetchGrades(cookie); 
         let examsHTML       = await fetchExams(cookie);
@@ -40,7 +44,31 @@ async function fetchGrades(cookie) {
     }
 }
 
+async function fetchEADGrades(cookie) {
+    let { status, statusText, data } = await Service.fetchNF(cookie);
+
+    if (status === 200) {
+        return data
+    } else if (status === 302) {
+        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+    } else {
+        throw new RestError({ statusCode: statusCode, message: statusText }); 
+    }
+}
+
 async function fetchExams(cookie) {
+    let { status, statusText, data } = await Service.fetchME(cookie);
+
+    if (status === 200) {
+        return data
+    } else if (status === 302) {
+        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
+    } else {
+        throw new RestError({ statusCode: statusCode, message: statusText }); 
+    }
+}
+
+async function fetchEADExams(cookie) {
     let { status, statusText, data } = await Service.fetchME(cookie);
 
     if (status === 200) {
