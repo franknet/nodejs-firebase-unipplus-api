@@ -1,7 +1,7 @@
-const Service                   = require("../service"); 
-const RestError                 = require("../models/rest-error");
-const Factory                   = require("../factories/disciplines-factory"); 
-const HTMLParser                = require("../utils/html-parser");
+const Service                   = require("../../service"); 
+const RestError                 = require("../../models/rest-error");
+const Factory                   = require("../../factories/disciplines-factory"); 
+const HTMLParser                = require("../../utils/html-parser");
 const { request, response }     = require("express");
 
 /**
@@ -11,17 +11,16 @@ const { request, response }     = require("express");
 
 async function fetchDisciplines(request, response) {
     try {
-        let cookie          = request.headers["cookie"]; 
+        let cookie = request.headers["cookie"]; 
         if (cookie === undefined) {
             throw new RestError({ statusCode: 302, message: "Sessão expirada" });
         } 
         let gradesHTML      = await fetchGrades(cookie); 
-        let examsHTML       = await fetchExams(cookie);
-        let disciplines     = createDisciplines(gradesHTML, examsHTML);
+        let examsHTML       = await fetchExams(cookie); 
         let headers = {
             "Content-Type": "application/json"
         }
-        response.status(200).header(headers).send(disciplines);
+        response.status(200).header(headers).send("OK");
     } catch (error) {
         let restError = new RestError({ error });
         response.status(restError.statusCode).header(restError.headers).send(restError.data);
@@ -29,23 +28,11 @@ async function fetchDisciplines(request, response) {
 }
 
 async function fetchGrades(cookie) {
-    let { status, statusText, data } = await Service.fetchNF(cookie);
+    let { statusCode, statusText, data } = await Service.fetchNF(cookie);
 
-    if (status === 200) {
+    if (statusCode === 200) {
         return data
-    } else if (status === 302) {
-        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
-    } else {
-        throw new RestError({ statusCode: statusCode, message: statusText }); 
-    }
-}
-
-async function fetchEADGrades(cookie) {
-    let { status, statusText, data } = await Service.fetchNF(cookie);
-
-    if (status === 200) {
-        return data
-    } else if (status === 302) {
+    } else if (statusCode === 302) {
         throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
     } else {
         throw new RestError({ statusCode: statusCode, message: statusText }); 
@@ -53,23 +40,11 @@ async function fetchEADGrades(cookie) {
 }
 
 async function fetchExams(cookie) {
-    let { status, statusText, data } = await Service.fetchME(cookie);
+    let { statusCode, statusText, data } = await Service.fetchME(cookie);
 
-    if (status === 200) {
+    if (statusCode === 200) {
         return data
-    } else if (status === 302) {
-        throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
-    } else {
-        throw new RestError({ statusCode: statusCode, message: statusText }); 
-    }
-}
-
-async function fetchEADExams(cookie) {
-    let { status, statusText, data } = await Service.fetchME(cookie);
-
-    if (status === 200) {
-        return data
-    } else if (status === 302) {
+    } else if (statusCode === 302) {
         throw new RestError({ statusCode: statusCode, message: "Sessão expirada!" }); 
     } else {
         throw new RestError({ statusCode: statusCode, message: statusText }); 

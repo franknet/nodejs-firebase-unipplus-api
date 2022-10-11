@@ -12,7 +12,7 @@ const UserFactory               = require("../factories/user-factory");
 
 async function fetchAuthentication(request, response) {
     try {
-        let credentials         = request.body;
+        let credentials         = request.body; 
         let { user, cookie }    = await fetchLogin(credentials); 
         let fbUser              = await userController.createUser(user, credentials["password"]);
         
